@@ -1,9 +1,27 @@
 """Contains utility functions used throughout the python package."""
 
 import pathlib
+import subprocess
 from os import getenv
 
 from IPython.display import Javascript, display
+
+
+def run_subprocess(command: list[str]) -> subprocess.CompletedProcess:
+    """
+    Use subprocess to run a bash command.
+
+    Parameters
+    ----------
+    command : list[str]
+        The command to be run
+
+    Return
+    ------
+     : subprocess.CompletedProcess
+        The output from the command
+    """
+    return subprocess.run(command, capture_output=True, text=True, check=False)
 
 
 def get_py_app_dir() -> pathlib.Path:

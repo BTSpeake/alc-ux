@@ -1,0 +1,9 @@
+ChemShell:
+  package: aiida-chemshell 
+  import: aiida_chemshell 
+  description: Run QM/MM workflows with the ChemShell simulation software 
+
+Janus:
+  package: aiida-mlip
+  import: aiida_mlip
+  description: Run workflows with machine learnt interatomic potentials  

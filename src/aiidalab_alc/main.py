@@ -177,6 +177,17 @@ class QuickAccessButtons(ipw.HBox):
             partial(open_link_in_new_tab, "../home/code_setup.ipynb")
         )
 
+        self.plugin_manager_link = ipw.Button(
+            description="Manage Plugins",
+            disabled=False,
+            button_style="primary",
+            tooltip="Manage AiiDA plugins",
+            icon="cogs",
+        )
+        self.plugin_manager_link.on_click(
+            partial(open_link_in_new_tab, "../alc-ux/plugin_manager.ipynb")
+        )
+
         self.docs_link = ipw.Button(
             description="Documentation",
             disabled=False,
@@ -192,6 +203,7 @@ class QuickAccessButtons(ipw.HBox):
             self.new_calc_link,
             self.history_link,
             self.resource_setup_link,
+            self.plugin_manager_link,
             self.docs_link,
         ]
         super().__init__(children=children, layout={"margin": "auto"}, **kwargs)
