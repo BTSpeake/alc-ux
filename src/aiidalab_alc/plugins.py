@@ -7,7 +7,8 @@ import ipywidgets as ipw
 import yaml
 from IPython.display import display
 
-from aiidalab_alc.utils import get_app_dir, run_subprocess
+from aiidalab_alc.navigation import QuickAccessButtons
+from aiidalab_alc.utils import get_app_dir, get_app_footer, run_subprocess
 
 
 class PluginData:
@@ -47,7 +48,7 @@ class PluginData:
         else:
             return True
 
-    def install(self) -> None:
+    def install(self) -> str:
         """
         Installs the required python package for an AiiDA plugin.
 
@@ -59,9 +60,10 @@ class PluginData:
         command = ["pip", "install", self.package, "--user"]
         result = run_subprocess(command)
         if result.returncode == 0:
-            pass
-        else:
-            pass
+            self.installed = True
+            return result.stdout
+        self.installed = False
+        return result.stderr
 
     def uninstall(self) -> None:
         """
@@ -75,9 +77,9 @@ class PluginData:
         command = ["pip", "uninstall", self.package, "--user"]
         result = run_subprocess(command)
         if result.returncode == 0:
-            pass
+            self.installed = True
         else:
-            pass
+            self.installed = False
 
 
 class PluginBoxWidget(ipw.VBox):
@@ -92,29 +94,88 @@ class PluginBoxWidget(ipw.VBox):
         plugin : PluginData
             The associated plugin object.
         """
+        self.rendered = False
         self.plugin = plugin
-        btns = ipw.HBox()
-        install_btn = ipw.Button(
-            description="Install",
-            buttons_style="success",
-            disabled=self.plugin.installed,
+        self.btns = ipw.HBox()
+        self.installed_label = ipw.HTML(
+            f"""
+            <b>Installed:</b> {"✅" if plugin.installed else "❌"}<br>
+            """
         )
-        remove_btn = ipw.Button(
-            description="Remove",
-            buttons_style="danger",
-            disabled=not self.plugin.installed,
-        )
-        btns.children = [install_btn, remove_btn]
-
-        info = ipw.HTML(
+        self.info = ipw.HTML(
             f"""
             <b>Description:</b> {plugin.description}<br>
             """
         )
-
+        self.install_report = ipw.Textarea(
+            value="",
+            placeholder="",
+            description="",
+            disabled=True,
+            layout={"width": "90%", "margin": "auto"},
+        )
         self.title = f"{plugin.name} {'✅' if plugin.installed else ''}"
+        super().__init__(**kwargs)
+        return
 
-        super().__init__(children=[info, btns], **kwargs)
+    def _install_plugin(self, _) -> None:
+        """Install the associated plugin and update the widget."""
+        stdout = self.plugin.install()
+        self.text.value = stdout
+        self.text.layout.display = ""
+        self.installed_label.value = f"""
+            <b>Installed: </b> {"✅" if self.plugin.installed else "❌"}<br>
+            """
+        self._update_buttons()
+        return
+
+    def _remove_plugin(self, _) -> None:
+        """Uninstall the associated plugin and update the widget."""
+        self.plugin.uninstall()
+        self.installed_label.value = f"""
+            <b>Installed: </b> {"✅" if self.plugin.installed else "❌"}<br>
+            """
+        self._update_buttons()
+        return
+
+    def _update_buttons(self) -> None:
+        """Update the state of the install/remove buttons."""
+        for child in self.children:
+            if isinstance(child, ipw.HBox):
+                for btn in child.children:
+                    if btn.description == "Install":
+                        btn.disabled = self.plugin.installed
+                    elif btn.description == "Remove":
+                        btn.disabled = not self.plugin.installed
+        return
+
+    def render(self) -> None:
+        """Create the buttons and display the widget."""
+        self.install_report.layout.display = "none"
+        if not self.rendered:
+            self.rendered = True
+            self.install_btn = ipw.Button(
+                description="Install",
+                button_style="success",
+                disabled=self.plugin.installed,
+                tooltip=f"Install the {self.plugin.name} plugin",
+            )
+            self.install_btn.on_click(self._install_plugin)
+            self.remove_btn = ipw.Button(
+                description="Remove",
+                button_style="danger",
+                disabled=not self.plugin.installed,
+                tooltip=f"Uninstall the {self.plugin.name} plugin",
+            )
+            self.remove_btn.on_click(self._remove_plugin)
+            self.btns.children = [self.install_btn, self.remove_btn]
+            self.children = [
+                self.installed_label,
+                self.info,
+                self.btns,
+                self.install_report,
+            ]
+        return
 
 
 class PluginManagerView(ipw.VBox):
@@ -131,6 +192,23 @@ class PluginManagerView(ipw.VBox):
         **kwargs: dict
             To be passed to the parent class' constructor.
         """
+        header = ipw.VBox(
+            children=[
+                ipw.HTML(
+                    """
+                    <h1 id='title'><b>ALC AiiDA Plugin Manager</b></h1>
+                    """,
+                    layout=ipw.Layout(margin="auto"),
+                ),
+                ipw.HTML(
+                    "<h4 id='subtitle'>Manage installation of available AiiDA \
+                        plugins developed by the ALC.</h4>",
+                    layout=ipw.Layout(margin="auto"),
+                ),
+            ],
+            layout={"width": "90%", "margin": "auto"},
+        )
+
         self.accordion = ipw.Accordion()
 
         self.plugin_widgets = []
@@ -139,12 +217,20 @@ class PluginManagerView(ipw.VBox):
             self.accordion.set_title(i, box.title)
             self.plugin_widgets.append(box)
         self.accordion.children = self.plugin_widgets
+        self.accordion.selected_index = None
+        self.accordion.observe(self._on_accordion_change, "selected_index")
 
-        self.children = [
-            self.accordion,
-        ]
+        footer = get_app_footer()
 
-        super().__init__(children=self.children, **kwargs)
+        super().__init__(
+            children=[header, QuickAccessButtons(), self.accordion, footer], **kwargs
+        )
+        return
+
+    def _on_accordion_change(self, change) -> None:
+        """Render the selected plugin's widget."""
+        if (step_index := change["new"]) is not None:
+            self.accordion.children[step_index].render()
         return
 
 

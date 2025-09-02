@@ -2,9 +2,11 @@
 
 import pathlib
 import subprocess
+from datetime import datetime
 from os import getenv
 
 from IPython.display import Javascript, display
+from ipywidgets import HTML, HBox, Layout
 
 
 def run_subprocess(command: list[str]) -> subprocess.CompletedProcess:
@@ -101,3 +103,21 @@ def open_link_in_new_tab(path: str, _=None) -> None:
     js_code = f"window.open('{path}', '_blank');"
     display(Javascript(js_code))
     return
+
+
+def get_app_footer() -> HBox:
+    """Return the standard footer for the AiiDAlab ALC app."""
+    return HBox(
+        [
+            HTML(
+                f"""
+            <footer>
+                Copyright (c) {datetime.now().year} Ada Lovelace Centre
+                (STFC) <br>
+            </footer>
+            """,
+                layout={"align-content": "right"},
+            )
+        ],
+        layout=Layout(justify_content="flex-end", width="95%"),
+    )
