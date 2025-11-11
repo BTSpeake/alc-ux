@@ -1,7 +1,7 @@
 .. _loca_aiidalab:
 
-Running AiiDAlab Locally
-========================
+Running AiiDAlab
+================
 
 Running The Container
 ---------------------
@@ -23,6 +23,28 @@ AiiDAlab which contain the additional requirements for their applicaions.
 One such image is provided in this repository which contains the AiiDAlab 
 ALC application and its dependencies. This image is hosted at 
 `<ghcr.io/stfc/alc-ux/full:latest>`_ and can be run locally in the same manner. 
+
+AiiDA User Profile Setup
+------------------------
+
+By default the AiiDA instance within the container defines a default user however, it is possible 
+to configure this user at start up, which is important since all data generated will be tagged with 
+this user configuration. To do this certain environment variables need to be passed to the container 
+at start-up, 
+
+- ``AIIDA_PROFILE_NAME``: The name of the new user profile 
+- ``AIIDA_USER_EMAIL``: Email address associated with the user 
+- ``AIIDA_USER_FIRST_NAME``: User's fisrt name 
+- ``AIIDA_USER_LAST_NAME``: User's second name 
+- ``AIIDA_USER_INSTITUTION``: Institution associated with the user 
+
+These can be passed to the container by using the ``--env`` command line option, or they can all be writted to 
+a file and read in by the ``--env-file`` option.
+
+There are certain circumstances where a new profile is not required, either if you want to manually setup 
+one from within the container or if you are binding in an existing AiiDA configuration folder containing an 
+existing user profile. In this instance you would pass in the ``--env SETUP_DEFAULT_AIIDA_PROFILE=false`` 
+variable, which will disable the creation of a new profile on startup. 
 
 Data Persistence 
 ----------------
