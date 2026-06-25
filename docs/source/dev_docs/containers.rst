@@ -17,12 +17,21 @@ run the following,
     
     # Docker 
     docker run -it --rm -p 8888:8888 aiidalab/full-stack:latest 
+
+The command line flags ``-it``, ``--rm`` and ``-p`` run the container interactively, delete it
+when it is closed and expose the port ``8888`` to the host which is required for opening the
+jupyter notebook in a browser. To run the equivalent setup with **Apptainer** instead of Docker
+run the following,
+
+.. code:: bash
+
     # Apptainer 
     apptainer run --compat --cleanenv --home /home/jovyan docker://aiidalab/full-stack:latest 
 
+
 To enable an AiiDAlab application within the container it must be installed in the 
 ``/home/jovyan/apps/`` directory. This can be achieved by either installing using the 
-in build terminal page or via binding a local instance of the development code into the 
+in-built terminal page or via binding a local instance of the development code into the 
 container at initialisation, 
 
 .. code:: bash 
@@ -32,14 +41,39 @@ container at initialisation,
     # Apptainer 
     apptainer run --compat --cleanenv --home /home/jovyan --bind /path/to/myApp:/home/jovyan/apps/myApp docker://aiidalab/full-stack:latest 
 
+If using the local bind method this allows editing of the application in a chosen local code editor
+and all changes will be updated live within the container. For more complex apps this live editing 
+may also require installing the project within the container as an editable python project by running
+the following from a terminal within the container,
+
+.. code:: bash
+
+    cd /home/jovyan/apps/myApp
+    pip install --no-user  -e . 
+
+Once these two steps have been completed any local changes to the plugin will be dynamically updated within
+the container and can be instantly visualised by refreshing the browser the notebook is running in. 
+
 Python Limitations
-------------------
+~~~~~~~~~~~~~~~~~~
 
 A known current limitation of the provided AiiDAlab docker images is there python version 
 is capped at 3.9 which can cause compatibility issues with more up-to-data python packages.
 A custom docker image is provided in this repository which will mimic the ``aiidalab/full-stack`` 
 image but using 3.10 as the base python version. This can be accessed at 
-`<ghcr.io/stfc/alc-ux/base:latest>`_ and used as described above. 
+`<ghcr.io/stfc/alc-ux/base:latest>`_ and used as described above.
+
+Local AiiDA Instances
+~~~~~~~~~~~~~~~~~~~~~
+
+It is currently not possible to include local instances of an AiiDA profile or database within a container
+running AiiDAlab, the container itself will need to create and manage all instances of AiiDA profiles and 
+databases. These can be configured using environment variables passed to the container at startup, see 
+:ref:`aiida_user_profile_setup` for more details. Once a profile and database has been setup by a AiiDAlab 
+based container these can be re-used by different container instances including different images as long
+as they are built of the same AiiDAlab foundation, they cannot be accessed by a local install of AiiDA 
+however.
+
 
 Docker Images For Distribution
 ------------------------------
